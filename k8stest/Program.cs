@@ -12,6 +12,13 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+
+    if (File.Exists("/config/appsettings.json"))
+    {
+        // this is less than ideal, this file should load after the local appsettings.json, not at the end
+        builder.Configuration.AddJsonFile("/config/appsettings.json", optional: true);
+    }
+
     string instance = builder.Configuration.GetValue<string>("Instance") ?? "n/a";
 
     builder.Host.UseSerilog((hostBuilderContext, loggerConfiguration) => loggerConfiguration
@@ -48,7 +55,14 @@ try
     // Add services to the container.
     builder.Services.AddControllersWithViews();
 
+    var forwardedHeaders = !string.IsNullOrEmpty(builder.Configuration.GetValue<string>("UseForwardedHeaders"));
+
     var app = builder.Build();
+
+    if(forwardedHeaders)
+    {
+        app.UseForwardedHeaders();
+    }
 
     app.UseSerilogRequestLogging();
 
